@@ -1,0 +1,70 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{makeidx}
+\usepackage{graphicx}
+\usepackage{lmodern}
+\usepackage{bm}
+\usepackage{tikz}
+\usepackage{amsthm}
+\usetikzlibrary{calc}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\author{Djordje Zivanovic}
+\title{\textbf{Warsaw PhD Open Course: From Joins to Aggregates and
+Optimization Problems - Exam solutions}}
+\begin{document}
+\maketitle
+\bigskip
+%Chapter 1 in Ockendon \& Tayler: Applied PDE's  
+%{\it Maths Institute Lecture Notes}. 	
+%{\bf Exercises 1, 2, 4, 5}.
+\newcommand{\transpose}[1]{#1 ^ \text{T}}
+\newcommand{\mat}[1]{\textbf{\text{{#1}}}}
+\newcommand{\vect}[1]{\mat{#1}}
+\newcommand{\gradient}[1]{\nabla_{\vect{#1}}}
+\newcommand{\der}[1]{\frac{\partial}{\partial #1}}
+\newcommand{\numberthis}{\addtocounter{equation}{1}\tag{\theequation}}
+\newcommand{\logfun}{\sigma(\transpose{\vect{x}}_i \vect{w})}
+\newcommand{\softmaxi}{\frac{e^{z_i}}{\sum_{l=1}^Ce^{z_l}}}
+\newcommand{\layersep}{2.5cm}
+\newcommand{\layersepH}{6cm}
+\newcommand{\layersepP}{7cm}
+\newcommand{\layersepB}{9cm}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\begin{enumerate}
+\item[1]
+Let $Q(\mathbf{A_1} \cup \mathbf{A_2} \cup \cdots \cup \mathbf{A_n})$ denote a join query on relations $R_1(\mathbf{A_1})=R_1(A_1, A_2), \cdots R_n(\mathbf{A_n})=R_n(A_n, A_1)$.
+
+Let $\mathcal{H}=(\mathcal{V}, \mathcal{E})$ denote a corresponding hypegraph to the join query, then $\mathcal{V} = \{A_1, .., A_n\}$ and $\mathcal{E} =\{\{A_1, A_2\}, ..., \{A_n, A_1\}\}$.
+\begin{enumerate}
+\item[1.1]
+Let $x_{R_i}$ denote the weight of an hyperedge (relation) $R_i$ in the join query $Q$. In addition let $cover_i$ denote the set of relations corresponding to edges that are part of the cover for the variable $i$. The fractional edge cover number $\rho^{*}(Q)$ is the cost of an optimal solution to the linear program:
+\begin{eqnarray}
+\text{minimize} \sum_{i\in [n]} x_{R_i}  \label{eq:minimize} \\
+\text{subject to} \sum_{rel_j \in cover_i} x_{rel_j} \geq 1, i \in [n]  \label{eq:inequalities}\\
+x_{R_i} \geq 0, i \in [n] \nonumber
+\end{eqnarray}
+
+By a definition of a cover, only edges incident  to variable are part of its cover. Thus, in our case $cover_i =\{ R_{i-1}, R_i \}$, where $R_0$ is $R_n$ in the case of $A_1$. If we rewrite the inequalities \ref{eq:inequalities} we will get:
+\begin{eqnarray}
+x_{R_1} +  x_{R_n} \geq 1 \nonumber \\
+x_{R_1} +  x_{R_2} \geq 1\nonumber \\
+\vdots \nonumber \\
+x_{R_{n-1}} +  x_{R_n} \geq 1 \nonumber
+\end{eqnarray}
+By summing inequalities we get:
+$$2\left(\sum_{i\in [n]} x_{R_i}\right) \geq n$$
+\end{enumerate}
+This means the minimized function $\rho^*(Q)$ cannot  be less than $\frac{n}{2}$. This is achievable if we set $x_{R_i}=\frac{1}{2}, i \in [n]$. We can see that this solution satisfies all constraints in the linear program. Finally, $\rho^*(Q)=\frac{n}{2}$. 
+\\
+
+\item[1.2]
+sdf
+
+\end{enumerate}
+
+\end{document}
