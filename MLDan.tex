@@ -87,24 +87,30 @@ The decomposition on the figure \ref{fig:fthw} is optimal because we have to "pr
 \end{figure}
 
 \item[1.2]
-A size of listing representation is $\mathcal{O}(N^{\rho^*(Q)})=\mathcal{O}(N^{\frac{n}{2}})$ and can be computed in time $\mathcal{O}(N^{\rho^*(Q)})=\mathcal{O}(N^{\frac{n}{2}})$.
+A size of listing representation is $\mathcal{O}(N^{\rho^*(Q)})=\mathcal{O}(N^{\frac{n}{2}})$ and can be computed in time $\mathcal{O}(N^{\rho^*(Q)})=\mathcal{O}(N^{\frac{n}{2}})$. Let $|D|$ represent size of training data set which is the number of tuples in the join of all relations $R_1, R_2, ..., R_n$.  
 A loss function is:
 \begin{eqnarray}
-2|D|\mathcal{L}(\mat{X},\vect{y}, \mathbf{\theta})  &=& (\vect{y} - \mat{X}\mathbf{\theta})^2 \nonumber + \lambda ||\mathbf{\theta}||_2^2\\
-			&=& \transpose{(\vect{y} - \mat{X}\mathbf{\theta})}(\vect{y} - \mat{X}\mathbf{\theta}) + \lambda ||\mathbf{\theta}||_2^2 \nonumber \\
+2|D|\mathcal{L}(\mat{X},\vect{y}, \mathbf{\theta})  &=& (\vect{y} - \mat{X}\mathbf{\theta})^2 \nonumber + \lambda |D| ||\mathbf{\theta}||_2^2\\
+			&=& \transpose{(\vect{y} - \mat{X}\mathbf{\theta})}(\vect{y} - \mat{X}\mathbf{\theta}) + \lambda |D| ||\mathbf{\theta}||_2^2 \nonumber \\
 &=&\transpose{\vect{y}}\vect{y} - \transpose{\vect{y}}\mat{X}\mathbf{\theta}
 - \transpose{\mathbf{\theta}}\transpose{\mat{X}} \vect{y}
-+ \transpose{\mathbf{\theta}}\transpose{\mat{X}}\mat{X}\mathbf{\theta} + \lambda ||\mathbf{\theta}||_2^2 \nonumber \\
++ \transpose{\mathbf{\theta}}\transpose{\mat{X}}\mat{X}\mathbf{\theta} + \lambda |D| |\mathbf{\theta}||_2^2 \nonumber \\
 &=&
 \transpose{\vect{y}}\vect{y} - 2 \transpose{\vect{y}}\mat{X}\mathbf{\theta}
-+ \transpose{\mathbf{\theta}}\transpose{\mat{X}}\mat{X}\mathbf{\theta} + \lambda\transpose{\mathbf{\theta}}\mathbf{\theta}
++ \transpose{\mathbf{\theta}}\transpose{\mat{X}}\mat{X}\mathbf{\theta} + \lambda |D| \transpose{\mathbf{\theta}}\mathbf{\theta}
 \label{eq:loss}
 \end{eqnarray}
 In the equation \ref{eq:loss} we used the property that transpose of a scalar is the same scalar. All equations before that are simple vector multiplications and additions. 
-If we derive the equation \ref{eq:loss} we get the gradient of the loss function: :
+Finally: 
+$$\mathcal{L}(\mat{X},\vect{y}, \mathbf{\theta}) = 
+\frac{1}{2|D|} \transpose{\vect{y}}\vect{y} - \frac{1}{|D|} \transpose{\vect{y}}\mat{X}\mathbf{\theta}
++ \frac{1}{2|D|}\transpose{\mathbf{\theta}}\transpose{\mat{X}}\mat{X}\mathbf{\theta} + 
+\frac{\lambda}{2} \transpose{\mathbf{\theta}}\mathbf{\theta}
+$$
+If we derive the equation \ref{eq:loss} we get the gradient of the loss function for one point:
 \begin{eqnarray}
-\nabla_{\mathbf{\theta}} \mathcal{L}(\mat{X},\vect{y}, \mathbf{\theta}) &=& 0  - \frac{1}{|D|}\transpose{\mat{X}}\vect{y} + \frac{1}{|D|}\transpose{\mat{X}}\mat{X}\mathbf{\theta} + \lambda \frac{1}{|D|}\mathbf{\theta} \nonumber \\
-&=& \frac{1}{|D|}\transpose{\mat{X}}\mat{X}\mathbf{\theta} - \frac{1}{|D|}\transpose{\mat{X}}\vect{y} + \lambda\frac{1}{|D|}\mathbf{\theta}\nonumber
+\nabla_{\mathbf{\theta}} \mathcal{L}(\mat{X},\vect{y}, \mathbf{\theta}) &=& 0  - \frac{1}{|D|}\transpose{\mat{X}}\vect{y} + \frac{1}{|D|}\transpose{\mat{X}}\mat{X}\mathbf{\theta} + \lambda \mathbf{\theta} \nonumber \\
+&=& \frac{1}{|D|}\transpose{\mat{X}}\mat{X}\mathbf{\theta} - \frac{1}{|D|}\transpose{\mat{X}}\vect{y} + \lambda \mathbf{\theta}\nonumber
 \end{eqnarray}
 A gradient descent formula is:
 $$\mathbf{\theta}_{t+1}=\mathbf{\theta}_t - \eta\nabla_{\mathbf{\theta}} \mathcal{L}(\mat{X},\vect{y}, \mathbf{\theta})$$
@@ -118,6 +124,60 @@ $\mathcal{O}(N^\frac{n}{2})$. $\transpose{\mat{X}}\mat{X}$ cached takes $\mathca
 When we add these complexities we get memory complexity at each iteration is:
 $\mathcal{O}(n^2)$. 
 
+\item[1.3]
+If we denote $\mathbf{\Sigma} = \frac{1}{|D|}\transpose{\mat{X}} \mat{X}, \vect{c} = \frac{1}{|D|}\transpose{\mat{X}}\vect{y}, $
+and elements of tensors, respectively, $\mathbf{\sigma}_{ij}, \vect{c}_{i}$ then FAQs for $\Sigma$ are: 
+\begin{itemize}
+\item When i-th feature and j-th feature are continuous values. 
+$$|D| \cdot \mathbf{\sigma}_{ij}= \sum_{a_1 \in Dom(A_1)} \sum_{a_2 \in Dom(A_2)} \cdots \sum_{a_n \in Dom(A_n)} a_i \cdot a_j 
+\prod_{k\in[n]} \vect{1}_{R_k(a_k, a_{k+1})}$$
+\item When i-th feature is a categorical value and j-th feature is a continuous value. 
+$$|D| \cdot \mathbf{\sigma}_{ij}[a_i]= \sum_{a_1 \in Dom(A_1)} \sum_{a_2 \in Dom(A_2)} \cdots 
+\sum_{a_{i-1} \in Dom(A_{i-1})}
+\sum_{a_{i+1} \in Dom(A_{1+1})}
+\cdots
+\sum_{a_n \in Dom(A_n)}  a_j 
+\prod_{k\in[n]} \vect{1}_{R_k(a_k, a_{k+1})}$$
+\item When i-th feature and j-th feature are categorical values. 
+$$|D| \cdot \mathbf{\sigma}_{ij}[a_i, a_j]= 
+\sum_{\substack{a_{1} \in \\Dom(A_{1})}}
+\sum_{\substack{a_{2} \in \\Dom(A_{2})}}
+\cdots 
+\sum_{\substack{a_{i-1} \in \\Dom(A_{i-1})}}
+\sum_{\substack{a_{i+1} \in \\Dom(A_{i+1})}}
+\cdots
+\sum_{\substack{a_{j-1} \in \\Dom(A_{j-1})}}
+\sum_{\substack{a_{j+1} \in \\Dom(A_{j+1})}}
+\cdots
+\sum_{a_n \in Dom(A_n)}  
+\prod_{k\in[n]} \vect{1}_{R_k(a_k, a_{k+1})}$$
+
+\end{itemize}
+Just let us notice that $a_{n+1}=a_1$ for notational purposes, also $i, j \in [n-1] \cup {0} $, where $0$ represents intercept column feature. 
+For $\vect{c}$ FAQs:
+\begin{itemize}
+\item When i-th feature and label are  continuous valuee. 
+$$|D| \cdot \mathbf{c}_{i}= \sum_{a_1 \in Dom(A_1)} \sum_{a_2 \in Dom(A_2)} \cdots \sum_{a_n \in Dom(A_n)} a_i \cdot a_n 
+\prod_{k\in[n]} \vect{1}_{R_k(a_k, a_{k+1})}$$
+\item When i-th feature is a categorical value and label is a continuous value. 
+$$|D| \cdot \mathbf{c}_{i}[a_i]= \sum_{a_1 \in Dom(A_1)} \sum_{a_2 \in Dom(A_2)} \cdots 
+\sum_{a_{i-1} \in Dom(A_{i-1})}
+\sum_{a_{i+1} \in Dom(A_{1+1})}
+\cdots
+\sum_{a_n \in Dom(A_n)}  a_n 
+\prod_{k\in[n]} \vect{1}_{R_k(a_k, a_{k+1})}$$
+\item When i-th feature and label are categorical values. 
+$$|D| \cdot \mathbf{c}_{i}[a_i, a_n]= 
+\sum_{\substack{a_{1} \in \\Dom(A_{1})}}
+\sum_{\substack{a_{2} \in \\Dom(A_{2})}}
+\cdots 
+\sum_{\substack{a_{i-1} \in \\Dom(A_{i-1})}}
+\sum_{\substack{a_{i+1} \in \\Dom(A_{i+1})}}
+\cdots
+\sum_{a_{n-1} \in Dom(A_{n-1})}  
+\prod_{k\in[n]} \vect{1}_{R_k(a_k, a_{k+1})}$$
+\end{itemize}
+Just let us notice that $a_{n+1}=a_1$ for notational purposes, $i \in [n-1] \cup {0} $, where $0$ represents intercept column feature. 
 
 \end{enumerate}
 
