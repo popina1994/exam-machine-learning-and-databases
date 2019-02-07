@@ -8,10 +8,13 @@
 \usepackage{graphicx}
 \usepackage{lmodern}
 \usepackage{bm}
+\usepackage[numbers]{natbib}
 \usepackage{tikz}
 \usepackage{amsthm}
 \usetikzlibrary{calc}
 \usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage{thmtools, thm-restate}
+
 \author{Djordje Zivanovic}
 \title{\textbf{Warsaw PhD Open Course: From Joins to Aggregates and
 Optimization Problems - Exam solutions}}
@@ -35,6 +38,8 @@ Optimization Problems - Exam solutions}}
 \newcommand{\layersepB}{9cm}
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}[theorem]{Lemma}
+
+\newtheorem{conjecture}[theorem]{Conjecture}
 \begin{enumerate}
 \item[1]
 Let $Q(\mathbf{A_1} \cup \mathbf{A_2} \cup \cdots \cup \mathbf{A_n})$ denote a join query on relations $R_1(\mathbf{A_1})=R_1(A_1, A_2), \cdots R_n(\mathbf{A_n})=R_n(A_n, A_1)$.
@@ -87,8 +92,8 @@ The decomposition on the figure \ref{fig:fthw} is optimal because we have to "pr
 \end{figure}
 
 \item[1.2]
-A size of listing representation is $\mathcal{O}(N^{\rho^*(Q)})=\mathcal{O}(N^{\frac{n}{2}})$ and can be computed in time $\mathcal{O}(N^{\rho^*(Q)})=\mathcal{O}(N^{\frac{n}{2}})$. Let $|D|$ represent size of training data set which is the number of tuples in the join of all relations $R_1, R_2, ..., R_n$.  
-A loss function is:
+A size of listing representation is $\mathcal{O}(N^{\rho^*(Q)})=\mathcal{O}(N^{\frac{n}{2}})$ and can be computed in time $\mathcal{O}(N^{\rho^*(Q)})=\mathcal{O}(N^{\frac{n}{2}})$. Let $|D|$ represent a size the of training data set which is the number of tuples in the join of all relations $R_1, R_2, ..., R_n$. Let $\mat{X}$ represent training data set consisting of tuples of the join with an additional intercept column with values only 1. Let $\vect{y}$ represent labels of training data corresponding to tuples of join and let $\theta$ be a column vector of training parameters for all features and a bias. In addition, let $\lambda$ represent hyperparemeter of $\ell_2$ regularizer.
+A loss function with added $\ell_2$ regularizer is :
 \begin{eqnarray}
 2|D|\mathcal{L}(\mat{X},\vect{y}, \mathbf{\theta})  &=& (\vect{y} - \mat{X}\mathbf{\theta})^2 \nonumber + \lambda |D| ||\mathbf{\theta}||_2^2\\
 			&=& \transpose{(\vect{y} - \mat{X}\mathbf{\theta})}(\vect{y} - \mat{X}\mathbf{\theta}) + \lambda |D| ||\mathbf{\theta}||_2^2 \nonumber \\
@@ -112,17 +117,22 @@ If we derive the equation \ref{eq:loss} we get the gradient of the loss function
 \nabla_{\mathbf{\theta}} \mathcal{L}(\mat{X},\vect{y}, \mathbf{\theta}) &=& 0  - \frac{1}{|D|}\transpose{\mat{X}}\vect{y} + \frac{1}{|D|}\transpose{\mat{X}}\mat{X}\mathbf{\theta} + \lambda \mathbf{\theta} \nonumber \\
 &=& \frac{1}{|D|}\transpose{\mat{X}}\mat{X}\mathbf{\theta} - \frac{1}{|D|}\transpose{\mat{X}}\vect{y} + \lambda \mathbf{\theta}\nonumber
 \end{eqnarray}
+Here we used properties $\gradient{\vect{x}}(\transpose{\vect{x}}\mat{A}\vect{x})=\mat{A}\vect{x} + \transpose{\mat{A}}\vect{x}$, $\gradient{\vect{x}}(\transpose{\vect{x}}\vect{x})=2\vect{x}$, $\gradient{\vect{x}}(\transpose{\vect{c}} \vect{x}) = \vect{c}$. In addition we used $\transpose{\left(\vect{u} \vect{v}\right)} = \transpose{\vect{v}}\transpose{\vect{u}}$. \\
 A gradient descent formula is:
 $$\mathbf{\theta}_{t+1}=\mathbf{\theta}_t - \eta\nabla_{\mathbf{\theta}} \mathcal{L}(\mat{X},\vect{y}, \mathbf{\theta})$$
+where $\theta_t$ represents parameters in the $t$-th iteration (we start with $\theta_0$ ) and $\eta$ represents hyperparameter of gradient learning.  
+\\
 After joining relations we need in each step to calculate gradient. 
-We can notice that $\transpose{\mat{X}}\vect{y}$ can be cached and the complexity to do so is $\mathcal{O}(n \cdot N^\frac{n}{2})$. Similarly with $\transpose{\mat{X}}\mat{X}$, whose calculation takes $\mathcal{O}(n^2 \cdot N^\frac{n}{2})$. In each iteration we need to multiply $\transpose{\mat{X}}\mat{X}$ with $\mathbf{\theta}$ which takes $\mathcal{O}(n^2)$ time.  
+We can notice that $\transpose{\mat{X}}\vect{y}$ can be cached and the complexity to do so is $\mathcal{O}(n \cdot N^\frac{n}{2})$. Similarly with $\transpose{\mat{X}}\mat{X}$, whose calculation takes $\mathcal{O}(n^2 \cdot N^\frac{n}{2})$. In each iteration we need to multiply $\transpose{\mat{X}}\mat{X}$ with $\mathbf{\theta}$ which takes $\mathcal{O}(n^2)$ time. We will ignore additions of vectors because they are one $O(n)$.   
 When we add  all time complexities we get:
 $$\mathcal{O}(N^\frac{n}{2} + n^2 \cdot N^\frac{n}{2} + n \cdot  N^\frac{n}{2} + n^2 \cdot t) $$
-
+If we refined the complexity and included the fact that categorical variables behave as the vectors whose length is the same as a length of the particular domain, the complexity would become:
+$$\mathcal{O}(N^\frac{n}{2} + (n_d)^2 \cdot N^\frac{n}{2} + n_d \cdot  N^\frac{n}{2} + n_d^2 \cdot t) $$
+where $n_d= n - 3 +  |Dom_{A_1}|+|Dom_{A_2}| + |Dom_{A_3}|$.
 Memory complexity after the join is
 $\mathcal{O}(N^\frac{n}{2})$. $\transpose{\mat{X}}\mat{X}$ cached takes $\mathcal{O}(n^2)$ and $\transpose{\mat{X}}\vect{y}$ takes $\mathcal{O}(n)$.
 When we add these complexities we get memory complexity at each iteration is:
-$\mathcal{O}(n^2)$. 
+$\mathcal{O}(n^2)$. In addition, if we include in the result the fact that we have categorical values, memory complexity is $\mathcal{O}(n_d^2)$. 
 
 \item[1.3]
 If we denote $\mathbf{\Sigma} = \frac{1}{|D|}\transpose{\mat{X}} \mat{X}, \vect{c} = \frac{1}{|D|}\transpose{\mat{X}}\vect{y}, $
@@ -153,20 +163,20 @@ $$|D| \cdot \mathbf{\sigma}_{ij}[a_i, a_j]=
 \prod_{k\in[n]} \vect{1}_{R_k(a_k, a_{k+1})}$$
 
 \end{itemize}
-Just let us notice that $a_{n+1}=a_1$ for notational purposes, also $i, j \in [n-1] \cup \{0\} $, where $0$ represents intercept column feature. 
+If we calculate $\sigma_{ij}$ we don't need to calculate $\sigma_{ji}$ because $\Sigma$ matrix is symmetric, therefore $\sigma_{ij} =\transpose{\sigma_{ij}}$ \\
 For $\vect{c}$ FAQs:
 \begin{itemize}
-\item When i-th feature and label are  continuous values. 
+\item When i-th feature and label are  continuous values: 
 $$|D| \cdot \mathbf{c}_{i}= \sum_{a_1 \in Dom(A_1)} \sum_{a_2 \in Dom(A_2)} \cdots \sum_{a_n \in Dom(A_n)} a_i \cdot a_n 
 \prod_{k\in[n]} \vect{1}_{R_k(a_k, a_{k+1})}$$
-\item When i-th feature is a categorical value and label is a continuous value. 
+\item When i-th feature is a categorical value and label is a continuous value: 
 $$|D| \cdot \mathbf{c}_{i}[a_i]= \sum_{a_1 \in Dom(A_1)} \sum_{a_2 \in Dom(A_2)} \cdots 
 \sum_{a_{i-1} \in Dom(A_{i-1})}
 \sum_{a_{i+1} \in Dom(A_{1+1})}
 \cdots
 \sum_{a_n \in Dom(A_n)}  a_n 
 \prod_{k\in[n]} \vect{1}_{R_k(a_k, a_{k+1})}$$
-\item When i-th feature and label are categorical values. 
+\item When i-th feature and label are categorical values: 
 $$|D| \cdot \mathbf{c}_{i}[a_i, a_n]= 
 \sum_{\substack{a_{1} \in \\Dom(A_{1})}}
 \sum_{\substack{a_{2} \in \\Dom(A_{2})}}
@@ -177,11 +187,16 @@ $$|D| \cdot \mathbf{c}_{i}[a_i, a_n]=
 \sum_{a_{n-1} \in Dom(A_{n-1})}  
 \prod_{k\in[n]} \vect{1}_{R_k(a_k, a_{k+1})}$$
 \end{itemize}
-Just let us notice that $a_{n+1}=a_1$ for notational purposes, $i \in [n-1] \cup \{0\} $, where $0$ represents intercept column feature. 
-Here we used $\mathbf{1}_E$ which is the Kronecker delta that evaulates to 1(0) whenever the event $E$ (not) holds. $R_k(a_k, a_{k+1})$ evaluates to 1(0) whenever tuple $(a_k, a_{k+1})$ is a part of relation $R_k$. If we wanted FAQs per definition from the slides $\psi_k=\vect{1}_{R_k(a_k, a_{k+1})}$, except in the case of $\psi_{i}$ and $\psi_j$ the expression above is multiplied by $a_i$, $a_j$.
-\\
-According to the "Learning Models over Relational Data
-using Sparse Tensors and Functional Dependencies" 
+Just let us notice that $a_{n+1}=a_1$ for notational purposes, $i \in [n-1] \cup \{0\} $, where $0$ represents intercept column feature. In cases where one of the features is intercept feature, there is no "skip" in sums over the intercept feature.
+Here we used $\mathbf{1}_E$ which is the Kronecker delta that evaulates to 1(0) whenever the event $E$ (not) holds. $R_k(a_k, a_{k+1})$ evaluates to 1(0) whenever tuple $(a_k, a_{k+1})$ is a part of relation $R_k$. 
+If we wanted FAQs per definition from the slides we would:
+\begin{itemize}
+\item set $\psi_k=\vect{1}_{R_k(a_k, a_{k+1})}$, except in the case of $\psi_{i}$ and $\psi_j$ where the expression above is multiplied by $a_i$, $a_j$.
+\item set $\oplus = \sum$
+\item set $\otimes = \prod$
+\item set free variables to corresponding categorical variables if there are any. For instance, in the case when there is one categorical variable a free variable would be that variable. 
+\end{itemize}
+According to the \cite[page 7]{abo2018database}  complexity 
 $$
 \mathcal{O}\left(|\mathcal{V}|^{2} \cdot|\mathcal{E}| \cdot \sum_{i, j \in[n-1]\cup\{0\}}\left(N^{\mathrm{faqw}(i, j)}+\left|\sigma_{i j}\right|\right) \cdot \log N\right)
  $$
@@ -223,32 +238,58 @@ $$\frac{\lambda}{2} \sum_{j \in \{0, 4, 5, ..., n-1 \} } ||\gamma_j||_2^2 + \lan
 using Sparse Tensors and Functional Dependencies").
 If we refined the complexity and included the fact that categorical variables behave as the vectors whose length is the same as a length of the particular domain, the complexity would become:
 $$\mathcal{O}(N^\frac{n}{2} + (n_d)^2 \cdot N^\frac{n}{2} + n_d \cdot  N^\frac{n}{2} + n_d^2 \cdot t) $$
-where $n_d= n + Dom_{A_1}+Dom_{A_2} + Dom_{A_3}$.
-We have reduced unnecessary operations from three categorical variables to one, which reduces $n_d$ to $n_w = n + Dom_{A_2}$
+where $n_d= n + |Dom_{A_1}|+|Dom_{A_2}| + |Dom_{A_3}|$.
+We have reduced unnecessary operations from three categorical variables to one, which reduces $n_d$ to $n_w = n + |Dom_{A_2}|$
 $$\mathcal{O}(N^\frac{n}{2} + (n_w)^2 \cdot N^\frac{n}{2} + n_w \cdot  N^\frac{n}{2} + n_w^2 \cdot t) $$
 \item[2.]
 \item[2.1]
-The main idea is:
+
+The OuMv problem is:
 \begin{itemize}
 \item 
-Insert $n^2$ tuples in $R$ such that $R(A, B) = \{(i, j) | \mat{M}(i, j) = 1\}$ and in $T$ such that $T(C, D) = \{(j, i) | \mat{M}(i, j) = 1\}$ 
-\item In each round $r \in [n]$:
+Input an $n \times n$ Boolean matrix \mat{M} and $n$ pairs $(\vect{u}_1, \vect{v}_1), ..., (\vect{u}_n, \vect{v}_n)$ of Boolean column-vectors of size $n$ arriving one after the other. 
+\item 
+	Goal is after seeing each pair $(\vect{u}_r, \vect{v}_r)$ to output $\transpose{\vect{u}_r}\mat{M}\vect{v}_r$.
+\end{itemize}
+\begin{conjecture}\label{conj:OUVM}
+For any $\gamma > 0$, there is no algorithm that solves the OuMv problem in time $\mathcal{O}(n^{3-\gamma})$.
+\end{conjecture}
+Let us assume there is an algorithm $\mathcal{A}$ which maintains 4-cycle detection with update time $\mathcal{O}(N^{\frac{1}{2}-\gamma})$, pre-processing time $\mathcal{O}(N^2)$, and answer time $\mathcal{O}(1)$ over a database of size $N$, unless the OuMv conjecture fails. 
+The algorithm  $\mathcal{B}$ using algorithm $\mathcal{A}$ which solves OuMv in subcubic time is:
 \begin{itemize}
-\item Delete all tuples in in $S, W$
-\item Insert at most $n$ tuples into $S, T, W$ 
+\item[(1)] 
+Insert at most $n^2$ tuples in $R$ such that $R(A, B) = \{(i, j) | \mat{M}(i, j) = 1\}$ and in $T$ such that $T(C, D) = \{(j, i) | \mat{M}(i, j) = 1\}$ ;
+\item[(2)] In each round $r \in [n]$:
+\begin{itemize}
+\item[(2.1)] Delete all tuples in in $S, W$;
+\item[(2.2)]  Insert at most $2n$ tuples into $S,  W$ 
 $S(B, C) = \{(j, j) | \vect{v}_r(j) = 1\}$
-$W(D, A) = \{(i, i) | \vect{u}_r(i) = 1\}$
-\item Check $R \bowtie S \bowtie T \bowtie W \neq \emptyset$. This holds only iff $\transpose{\vect{u}}_r\mat{M}\vect{v}_r=1$
+$W(D, A) = \{(i, i) | \vect{u}_r(i) = 1\}$;
+\item[(2.3)] Check $R \bowtie S \bowtie T \bowtie W \neq \emptyset$. This holds only iff $\transpose{\vect{u}}_r\mat{M}\vect{v}_r=1$
 $
-\exists i, j \in[n] \text { with } \mathbf{u}_{r}(i)=1, \mathbf{M}(i, j)=1, \text { and } \mathbf{v}_{r}(j)=1
-$
-Time analysis similar as on the slides (due to time limitation omitted). 
-
-
+\exists i, j \in[n] \text { with } \vect{u}_{r}(i)=1, \mat{M}(i, j)=1, \text { and } \vect{v}_{r}(j)=1
+$.
+Time analysis:
 \end{itemize}
 \end{itemize}
+There are at most $n^2$ tuples inserted at the step (1) and $2n$ at the step 2, thus the size of database is at most $O(n^2)$, because tuples from the step $2$ are deleted in each round. 
+A complexity of the step (1) of algorithm $\mathcal{B}$ is:
+$$\mathcal{O}(n^2 \cdot (n^2)^{\frac{1}{2} -\gamma}) =
+\mathcal{O}(n^2 \cdot n^{1- 2 \gamma }) = \mathcal{O}(n^{3-2\gamma})$$
+Here we calculated complexity of inserting $n^2$  tuples to the database.  
+A complexity of the step (2) of algorithm $\mathcal{B}$ is:
+$$\mathcal{O}(4n \cdot (n^2)^{\frac{1}{2} -\gamma} + 1) = \mathcal{O}(4 n^{2-2\gamma} + 1 ) = \mathcal{O}(n^{2-2\gamma})$$
+The analysis of the step (2) takes into consideration that there are at most $2n$  tuples to be deleted and inserted from $S, W$ ($\vect{u}_r$ and $\vect{v}_r$ are filled with ones).
+Time for $n$ rounds in the step (2) is:
+$$\mathcal{O}(n \cdot n^{2-2\gamma})=\mathcal{O}(n^{3-2\gamma})$$ 
+Summing complexities of steps (1) and 2) we get that an overall time complexity is $\mathcal{O}(n^{3-2\gamma})$, which is in contradiction to the claim from the conjecture \ref{conj:OUVM}. 
+
+\item[2.2]
 
 \end{enumerate}
 
+
+\bibliographystyle{IEEEtranN}
+\bibliography{research}
 
 \end{document}
