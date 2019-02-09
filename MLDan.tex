@@ -92,7 +92,7 @@ The decomposition on the figure \ref{fig:fthw} is optimal because we have to "pr
 \end{figure}
 
 \item[1.2]
-A size of listing representation is $\mathcal{O}(N^{\rho^*(Q)})=\mathcal{O}(N^{\frac{n}{2}})$ and can be computed in time $\mathcal{O}(N^{\rho^*(Q)})=\mathcal{O}(N^{\frac{n}{2}})$. Let $|D|$ represent a size the of training data set which is the number of tuples in the join of all relations $R_1, R_2, ..., R_n$. Let $\mat{X}$ represent training data set consisting of tuples of the join with an additional intercept column with values only 1. Let $\vect{y}$ represent labels of training data corresponding to tuples of join and let $\theta$ be a column vector of training parameters for all features and a bias. In addition, let $\lambda$ represent hyperparemeter of $\ell_2$ regularizer.
+A size of listing representation is $\mathcal{O}(N^{\rho^*(Q)})=\mathcal{O}(N^{\frac{n}{2}})$ and can be computed in time $\mathcal{O}(N^{\rho^*(Q)})=\mathcal{O}(N^{\frac{n}{2}})$. Let $|D|$ represent a size the of training data set which is the number of tuples in the join of all relations $R_1, R_2, ..., R_n$. Let $\mat{X}$ represent training data set consisting of tuples of the join with an additional intercept column with values only 1. Let $\vect{y}$ represent labels of training data corresponding to tuples of join and let $\pmb{\theta}$ be a column vector of training parameters for all features and a bias. In addition, let $\lambda$ represent hyperparemeter of $\ell_2$ regularizer.
 A loss function with added $\ell_2$ regularizer is :
 \begin{eqnarray}
 2|D|\mathcal{L}(\mat{X},\vect{y}, \mathbf{\theta})  &=& (\vect{y} - \mat{X}\mathbf{\theta})^2 \nonumber + \lambda |D| ||\mathbf{\theta}||_2^2\\
@@ -211,54 +211,124 @@ D| \cdot \mathbf{\sigma}_{ij}&=&
 \prod_{k\in[n]} \psi_k(a_k, a_{k+1}) \\
 &=& 
  \sum_{a_2 \in Dom(A_2)} \cdots \sum_{a_n \in Dom(A_n)} 
-\prod_{k\in \{ 2, .., n\}} \psi_k(a_k, a_{k+1}) \cdot \\
-&& 
-\cdot 
-\underbrace{\left( \sum_{a_1 \in Dom(A_1)} \prod_{k\in \{ 2, .., n-1\}}\psi_k'(a_k, a_{k+1})\psi_1(a_1, a_2) \psi_n(a_1, a_n)\right)}_{\psi_{22}(a_2, a_n)} \\
+\prod_{k\in \{ 2, .., n\}} \psi_k(a_k, a_{k+1})  \cdot 
+\underbrace{\left( \sum_{a_1 \in Dom(A_1)} \psi_1(a_1, a_2) \psi_n(a_1, a_n)\right)}_{\psi_{22}(a_2, a_n)} \\
 &=&  \sum_{a_2 \in Dom(A_2)} \cdots \sum_{a_n \in Dom(A_n)} 
 \psi_{22}(a_2, a_n) \prod_{k\in\{2,...,n-1\} } \psi_k(a_k, a_{k+1}) &&\mathcal{O}(N^2) \\
 &=&  \sum_{a_3 \in Dom(A_3)} \cdots \sum_{a_n \in Dom(A_n)} 
 \psi_{32}(a_3, a_n) \prod_{k\in\{3,...,n-1\} } \psi_k(a_k, a_{k+1}) &&\mathcal{O}(N^2) \\
 \vdots \\
 &=&  \sum_{a_{n-1} \in Dom(A_{n-1})} \sum_{a_n \in Dom(A_n)} 
-\psi_{n-1 2}(a_n-1, a_n) \psi_{n-1}(a_n, a_{n-1})&&\mathcal{O}(N^2)\\
+\psi_{n-1 2}(a_{n-1}, a_n) \psi_{n-1}(a_n, a_{n-1})&&\mathcal{O}(N^2)\\
+&=& \sum_{a_n \in Dom(A_n)} 
+\psi_{n 2} &&\mathcal{O}(N)
 \end{align*}
-In each step where we calculated aggregate, we see that the calculation takes ${O}(N^2)$ because of the joining on a variable in each step, thus complexity is as it is stated in the proposition 3.4. $\psi_k'(a_k, a_{k+1})$ is an indicator projection of $\psi_k$ it has value 1 when a tuple $(a_k, a_{k+1})$ exists in a relation. \\
-When we have categorical and continuous case the solution is similar, just in our calculations we would not sum over our free variable. 
-When we have two categorical variables we would join relations one by one leaving categorical variables (relations to whom they belong) the last with each join taking the most $O(N^2)$ and keeping aggregates (in this case count).  By doing this we can get final join in $O(n \cdot N^2 \cdot \log N)$ (which is what the slides claim).
+where $$\psi_{k2} = \sum_{a_{k-1} \in Dom(A_{k-1})} \psi_{k-1\, 2} (a_{k-1}, a_{n}) \psi_{k-1}(a_{k-1}, a_k), k \in \{ 3, 4 .., n \}$$
+In each step where we calculated FAQ, we see that the calculation takes ${O}(N^2)$ because of the joining on a variable in each step and calculating sum, thus complexity is as it is stated in the proposition 3.4.  We could have used indicator projection in each step to remove unnecessary domains from $\psi_{k2}, k \in \{ 2, 3, ..., n\}$. \\
+When we have categorical and continuous case the solution is similar, just in our calculations we would not sum over the free variable, moreover it will be on the top of the variable order. Complexity in this case is:
+\begin{align*}
+\mathcal{O}\left(|\mathcal{V}|^{2} \cdot|\mathcal{E}| \cdot \sum_{i\in\{1, 2, 3\}j \in \{ 4, 5 , n-1\} \cup\{0\}}\left(N^{\mathrm{faqw}(i, j)}+\left|\sigma_{i j}\right|\right) \cdot \log N\right)
+&=&
+\mathcal{O}\left( n^2 \cdot n \cdot 3n \left(N^2 + \left|\sigma_{i j}\right|\right) \log N \right) \\
+&=&  
+\mathcal{O}\left( n^4 \left(N^2 + N) \right) \log N \right)\\
+&=&  
+\mathcal{O}\left( n^4 N^2  \log N \right)
+\end{align*}
+ 
+When we have two categorical variables we would join relations one by one leaving categorical variables on the top of variable order. At the end join process would be the same except in the case when $\sigma_{13}(a_1, a_3)\sigma_{31}(a_3, a_1)$, where we need to calculate sum over $a_2$ as the last.   
+Complexity in this case is:
+\begin{align*}
+\mathcal{O}\left(|\mathcal{V}|^{2} \cdot|\mathcal{E}| \cdot \sum_{i\in\{1, 2, 3\}j \in \{ 1, 2, 3\} }\left(N^{\mathrm{faqw}(i, j)}+\left|\sigma_{i j}\right|\right) \cdot \log N\right)
+&=&
+\mathcal{O}\left( n^2 \cdot n \cdot 9 \left(N^2 + \left|\sigma_{i j}\right|\right) \log N \right) \\
+&=&  
+\mathcal{O}\left( n^3 \left(N^2 + N^2) \right) \log N \right)\\
+&=&  
+\mathcal{O}\left( n^3 N^2  \log N \right)
+\end{align*}
+Finally time complexity is:
+\begin{align*}
+\mathcal{O}\left(|\mathcal{V}|^{2} \cdot|\mathcal{E}| \cdot \sum_{i, j \in[n-1]\cup\{0\}}\left(N^{\mathrm{faqw}(i, j)}+\left|\sigma_{i j}\right|\right) \cdot \log N\right)
+&=&\mathcal{O}\left(n^5 N^{\mathrm{2}}\cdot \log N\ +  n^4 N^{\mathrm{2}}\cdot \log N +  n^3 N^2  \log N \right) \\
+&=& \mathcal{O}\left(n^5 N^{\mathrm{2}}\cdot \log N\right) 
+\end{align*} 
+$|\sigma_{ij}|$ is limited by $|N|$ or $|N|^2$ (depending on a number of free variables), but it can be as low as $1$. 
+The same is with the memory complexity where it can go up to $\mathcal{O}(n_d^2)$  because we need to list $\sigma_{ij}$. Although, it can be even $\mathcal{O}(n^2)$, depending on database. 
+
+%  	
 \item [1.4]
 By properties of functional dependency $A_2 \rightarrow A_1A_3 \Leftrightarrow A_2 \rightarrow A_1, A_2\rightarrow A_3$. This means if we one-hot encode each of categories from variables $A_1, A_2, A_3$ then $\vect{a}_{A_1} = \mat{R}_1 \vect{a}_{A_2}$ and $\vect{a}_{A_3} = \mat{R}_3 \vect{a}_{A_2}$ due to functional dependencies. Furthermore, if we concatenate particular matrices $\mat{R}= \begin{bmatrix}
-\mat{R}_1 \\
-\mat{R}_2
+\mat{R}_1 \\ \mat{R}_3
 \end{bmatrix}
-$  
-and 
-$\vect{a}_{A_1A_3}= \begin{bmatrix}
+$  and 
+$
+\vect{a}_{A_1A_3}= \begin{bmatrix}
 \vect{a}_{A_1} \\
 \vect{a}_{A_3}
 \end{bmatrix}
-$, we get $\vect{a}_{A_1A_3}=\mat{R}\vect{a}_{A_2}$. Approximation of output based on $\theta s$ is:
+$, 
+we get 
+\begin{equation}
+\vect{a}_{A_1A_3}=\mat{R}\vect{a}_{A_2}
+\label{eq:RCHange}
+\end{equation}
+ where $\vect{a}_{A_2}, \vect{a}_{A_1}, \vect{a}_{A_3}$ are column vectors corresponding to tuples. Further, we will use notation $\vect{a}_i = \vect{a}_{A_i}$. Approximation of output based on $\pmb{\theta} s$ is:
 \begin{eqnarray}
 \hat{y} &=& 
-\sum_{ i\in [n-1] \setminus \{ 1, 2,3 \} \cup \{0\}} \langle \theta_i, \vect{x}_i \rangle + \langle \theta_1 , \vect{x}_1 \rangle  + \langle \theta_2 , \vect{x}_2 \rangle + \langle \theta_3, \vect{x}_3 \rangle\\
+\sum_{ i\in [n-1] \setminus \{ 1, 2,3 \} \cup \{0\}} \langle \pmb{\theta}_i, \vect{a}_i \rangle + \langle \pmb{\theta}_1 , \vect{a}_1 \rangle  + \langle \pmb{\theta}_2 , \vect{a}_2 \rangle + \langle \pmb{\theta}_3, \vect{a}_3 \rangle \label{eq:initial}\\
 &=&
-\sum_{ i\in [n-1] \setminus \{ 1, 2,3 \} \cup \{0\}} \langle \theta_i, \vect{x}_i \rangle + \langle \theta_{13},\vect{x}_{13} \rangle  + \langle \theta_2, \vect{x}_2 \rangle \rangle\\
+\sum_{ i\in [n-1] \setminus \{ 1, 2,3 \} \cup \{0\}} \langle \pmb{\theta}_i, \vect{a}_i \rangle + \langle \pmb{\theta}_{13},\vect{a}_{13} \rangle  + \langle \pmb{\theta}_2, \vect{a}_2 \rangle \label{eq:concat} \\
 &=&
-\sum_{ i\in [n-1] \setminus \{ 1, 2,3 \}\cup \{0\}} \langle \theta_i, \vect{x}_i \rangle + \langle \theta_{13},\mat{R} \vect{x}_2 \rangle  + \langle \theta_2 ,\vect{x}_2 \rangle \rangle\\
+\sum_{ i\in [n-1] \setminus \{ 1, 2,3 \}\cup \{0\}} \langle \pmb{\theta}_i, \vect{a}_i \rangle + \langle \pmb{\theta}_{13},\mat{R} \vect{a}_2 \rangle  + \langle \pmb{\theta}_2 ,\vect{a}_2 \rangle \label{eq:RNew} \\
 &=&
-\sum_{ i\in [n-1]\setminus \{ 1, 2,3 \} \cup \{0\}} \langle \theta_i, \vect{x}_i \rangle +   \langle \transpose{\mat{R}} \theta_{13} +\theta_2 ,\vect{x}_2 \rangle \rangle \label{eq:approximation}\\
+\sum_{ i\in [n-1] \setminus \{ 1, 2,3 \}\cup \{0\}} \langle \pmb{\theta}_i, \vect{a}_i \rangle +  \transpose{\pmb{\theta}_{13}} \cdot (\mat{R} \vect{a}_2)  + \transpose{\pmb{\theta}_2 }\cdot \vect{a}_2 \label{eq:DotDef} \\
+&=&
+\sum_{ i\in [n-1] \setminus \{ 1, 2,3 \}\cup \{0\}} \langle \pmb{\theta}_i, \vect{a}_i \rangle + (\transpose{\pmb{\theta}_{13}} \mat{R})\cdot \vect{a}_2 + \transpose{\pmb{\theta}_2 }\cdot \vect{a}_2  \label{eq:associativity} \\
+&=&
+\sum_{ i\in [n-1] \setminus \{ 1, 2,3 \}\cup \{0\}} \langle \pmb{\theta}_i, \vect{a}_i \rangle + (\transpose{\pmb{\theta}_{13}} \mat{R}+ \transpose{\pmb{\theta}_2 })\cdot \vect{a}_2  \label{eq:distributivity} \\
+&=&
+\sum_{ i\in [n-1]\setminus \{ 1, 2,3 \} \cup \{0\}} \langle \pmb{\theta}_i, \vect{a}_i \rangle +   \langle \transpose{\mat{R}} \pmb{\theta}_{13} +\pmb{\theta}_2 ,\vect{a}_2 \rangle  \label{eq:approximation}
 \end{eqnarray}
-Let $\gamma_2 = \transpose{\mat{R}}\theta_{13} + \theta_2$ and let $\gamma_j = \theta_j, j \in \{0, 4, ..., n-1\}$. Then $\gamma_j$ won't appear in the loss function because they don't appear in $\hat{y}$ as we see in the equation \ref{eq:approximation}. They still appear in l2 regularizer. In the l2 regularizer we have:
-$$\frac{\lambda}{2} \sum_{j \in \{0, 4, 5, ..., n \} } ||\gamma_j||_2^2 + ||\theta_{13} ||^2_2 +  ||\gamma_2 - \transpose{\mat{R}}\theta_{13}  ||$$
-By optimizing out (we reach optimal value) $\theta_{13}$ from regularizer we get 
-$$\frac{1}{\lambda} \frac{\partial l2}{\partial \theta_{13}} =\mat{R}(\transpose{\mat{R}}\theta_{13} - \gamma_2) + \theta_{13} =0$$
-which by further solving we get:
-$$\theta_{13} = (\mat{I} + \mat{R}\transpose{\mat{R}})^{-1}\mat{R}\gamma_2$$
-Finally l2 regularizer is:
-$$\frac{\lambda}{2} \sum_{j \in \{0, 4, 5, ..., n-1 \} } ||\gamma_j||_2^2 + \langle (\mat{I} + \transpose{\mat{R}}\mat{R})^{-1}, \gamma_2 \rangle $$ (the full derivation in the "Learning Models over Relational Data
-using Sparse Tensors and Functional Dependencies").
-We have reduced unnecessary operations from three categorical variables to one, which reduces $n_d$ to $n_w = n - 3 + |Dom_{A_2}|$
+In the equation \ref{eq:initial} we used formula for prediction of output based on input using learned parameters. In the equation \ref{eq:concat} we concatenated parameters and input tuples into column vectors. In the equation \ref{eq:RNew} we changed variable $\vect{a}_{13}$ using equation \ref{eq:RCHange}. 
+In the equation \ref{eq:DotDef} we used the fact that $\langle \vect{a}, \vect{b} \rangle = \transpose{\vect{a}} \vect{b}$. In the equation \ref{eq:associativity} we used an associativity of matrix multiplication. In the equation \ref{eq:distributivity} we used an distributivity over matrix addition. In the \ref{eq:approximation} we used the fact  $\langle \vect{a}, \vect{b} \rangle = \transpose{\vect{a}} \vect{b}$ and the fact  $\transpose{(\vect{a} \cdot \vect{b})} = \transpose{\vect{b}} \cdot \transpose{\vect{a}}$
+\\
+Let $\pmb{\gamma}_2 = \transpose{\mat{R}}\pmb{\theta}_{13} + \pmb{\theta}_2$ and let $\pmb{\gamma}_j = \pmb{\theta}_j, j \in \{0, 4, ..., n-1\}$. $\pmb{\theta}_1, \pmb{\theta}_3$ won't appear in the square loss function because they don't appear in $\hat{y}$ as we see in the equation \ref{eq:approximation}. They still appear in $\ell_2$ regularizer. The square loss for each input (tuple in join) is:
+$$
+\left(\sum_{ i\in [n-1] \cup \{0\}} \langle \pmb{\gamma}_i, \vect{a}_i \rangle - \vect{a}_n\right)^2 \label{eq:approximation}
+$$
+In the $\ell_2$ regularizer we have:
+$$\ell_2 = \frac{\lambda}{2} \sum_{j \in \{0, 4, 5, ..., n \} } ||\pmb{\gamma}_j||_2^2 + ||\pmb{\theta}_{13} ||^2_2 +  ||\pmb{\gamma}_2 - \transpose{\mat{R}}\pmb{\theta}_{13}  ||_2^2$$
+By optimizing out (we reach optimal value) $\pmb{\theta}_{13}$ from regularizer we get 
+\begin{align}
+\frac{1}{\lambda} \frac{\partial \ell_2}{\partial \pmb{\theta}_{13}} &=&
+0 + 
+\frac{\partial \transpose{\pmb{\theta}_{13}}\pmb{\theta}_{13}}{\partial \pmb{\theta}_{13}} + 
+\frac{\partial \transpose{(\pmb{\gamma}_2 - 
+\transpose{\mat{R}}\pmb{\theta}_{13})}(\pmb{\gamma}_2 - \transpose{\mat{R}}\pmb{\theta}_{13})}{2\partial \pmb{\theta}_{13}} \label{eq:simpleExp}\\
+&=& \frac{\partial \transpose{\pmb{\theta}_{13}}\pmb{\theta}_{13}}{2\partial \pmb{\theta}_{13}} + \frac{\partial \transpose{\pmb{\gamma}_2}\pmb{\gamma}_2}{2\partial \pmb{\theta}_{13}}
+-2 \frac{\partial (\transpose{\pmb{\theta}_{13}}\mat{R}\pmb{\gamma}_2)}{2\partial \pmb{\theta}_{13}}
++ \frac{\partial (\transpose{\pmb{\theta}_{13}}\mat{R}\transpose{\mat{R}}\pmb{\theta}_{13})}{2\partial \pmb{\theta}_{13}} \label{eq:simpleCalc}
+\\
+&=& \pmb{\theta}_{13} + 0 - \mat{R}\pmb{\gamma}_2 +  \mat{R}\transpose{\mat{R}}\pmb{\theta}_{13} \label{eq:derRules}\\
+&=&(\mat{I}_{13} + \mat{R}\transpose{\mat{R}})\pmb{\theta}_{13} + \mat{R}\pmb{\gamma}_2 =0
+\label{eq:optimized}
+\end{align}
+In the equation \ref{eq:simpleExp} we rewrote expressions for norms using rule $|\vect{v}|_2^2 = \transpose{\vect{v}}{\vect{v}}$. In the equation \ref{eq:simpleCalc} we used simple matrix operations (multiply and add). In the equation \ref{eq:derRules} we used properties $\gradient{\vect{x}}(\transpose{\vect{x}}\mat{A}\vect{x})=\mat{A}\vect{x} + \transpose{\mat{A}}\vect{x}$, $\gradient{\vect{x}}(\transpose{\vect{x}}\vect{x})=2\vect{x}$, $\gradient{\vect{x}}(\transpose{\vect{c}} \vect{x}) = \vect{c}$. 
+By further solving the equation \ref{eq:optimized} we get:
+$$\pmb{\theta}_{13} = (\mat{I}_{13} + \mat{R}\transpose{\mat{R}})^{-1}\mat{R}\pmb{\gamma}_2$$
+Finally $\ell_2$ regularizer is:
+$$\frac{\lambda}{2} \sum_{j \in \{0, 4, 5, ..., n-1 \} } ||\pmb{\gamma}_j||_2^2 + \langle (\mat{I}_2 + \transpose{\mat{R}}\mat{R})^{-1} \pmb{\gamma}_2 , \pmb{\gamma}_2 \rangle $$ 
+The final derivation is the same as in \cite[page 21 C.1 appendix]{abo2018database} just in indices of parameters instead of city is $2$ and instead of country is $13$.
+\\
+The reparametrized loss function is:
+
+$$
+\frac{1}{2|D|}\sum_{\vect{a}\in D}\left(\sum_{ i\in [n-1] \cup \{0\}} \langle \pmb{\gamma}_i, \vect{a}_i \rangle - \vect{a}_n\right)^2 + \frac{\lambda}{2} \sum_{j \in \{0, 4, 5, ..., n-1 \} } ||\pmb{\gamma}_j||_2^2 + \langle (\mat{I}_2 + \transpose{\mat{R}}\mat{R})^{-1} \pmb{\gamma}_2 , \pmb{\gamma}_2 \rangle 
+$$
+We have reduced unnecessary operations from three categorical variables to one, which reduces $n_d$ to $n_w = n - 3 + |Dom_{A_2}|$ in the case of listing representation
 $$\mathcal{O}(N^\frac{n}{2} + (n_w)^2 \cdot N^\frac{n}{2} + n_w \cdot  N^\frac{n}{2} + n_w^2 \cdot t) $$
+In the case of FAQs we have removed the most time consuming FAQs, more precisely in the case of 2 categorical variables, we just need to evaluate FAQ for one variable. Thus, if sizes of domains are big in comparison to database size, complexity is reduced drastically.
 \item[2.]
 \item[2.1]
 
@@ -303,6 +373,8 @@ $$\mathcal{O}(n \cdot n^{2-2\gamma})=\mathcal{O}(n^{3-2\gamma})$$
 Summing complexities of steps (1) and 2) we get that an overall time complexity is $\mathcal{O}(n^{3-2\gamma})$, which is in contradiction to the claim from the conjecture \ref{conj:OUVM}. 
 
 \item[2.2]
+
+
 
 \end{enumerate}
 
