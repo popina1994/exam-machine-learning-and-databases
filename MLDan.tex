@@ -196,15 +196,36 @@ If we wanted FAQs per definition from the slides we would:
 \item set $\otimes = \prod$
 \item set free variables to corresponding categorical variables if there are any. For instance, in the case when there is one categorical variable a free variable would be that variable. 
 \end{itemize}
-According to the \cite[page 7]{abo2018database}  complexity 
+According to the proposition 3.4 from \cite[page 7]{abo2018database}  complexity is:
 $$
 \mathcal{O}\left(|\mathcal{V}|^{2} \cdot|\mathcal{E}| \cdot \sum_{i, j \in[n-1]\cup\{0\}}\left(N^{\mathrm{faqw}(i, j)}+\left|\sigma_{i j}\right|\right) \cdot \log N\right)
  $$
- where $ \mathrm{faqw} \leq \mathrm{fhtw} + c - 1$ where $c$ is maximum of categorical variables for any $\sigma_{ij}$. In the case when we have only continuous variables $\mathrm{faqw} =\mathrm{fhtw}$ the previous complexity is then 
+ where $ \mathrm{faqw}(i, j) \leq \mathrm{fhtw}(i, j) + c - 1$ according to proposition A.9  from \cite{abo2018database}, $c$ is a maximum of categorical variables for any $\sigma_{ij}$, because they are free variables. In the case when we have only continuous variables $\mathrm{faqw} =\mathrm{fhtw}$ the previous complexity is then 
  $$
 \mathcal{O}\left(|\mathcal{V}|^{2} \cdot|\mathcal{E}| \cdot \sum_{i, j \in \{4, 5, ..., n-1\}\cup\{0\}}N^{\mathrm{2}}\cdot \log N\right) = \mathcal{O}\left(n^5 N^{\mathrm{2}}\cdot \log N\right)
  $$
- For categorical case we would join relations one by one leaving categorical variables (relations to whom they belong) the last with each join taking the most $O(N^2)$ and keeping aggregates (in this case count).  By doing this we can get final join in $O(n \cdot N^2 \cdot \log N)$ (which is what the slides claim).\footnote{Further explanations omitted due time constraints}
+ This complexity can be get by using InsideOut algorithm with no free variables:
+\begin{align*}
+D| \cdot \mathbf{\sigma}_{ij}&=& 
+\sum_{a_1 \in Dom(A_1)} \sum_{a_2 \in Dom(A_2)} \cdots \sum_{a_n \in Dom(A_n)} 
+\prod_{k\in[n]} \psi_k(a_k, a_{k+1}) \\
+&=& 
+ \sum_{a_2 \in Dom(A_2)} \cdots \sum_{a_n \in Dom(A_n)} 
+\prod_{k\in \{ 2, .., n\}} \psi_k(a_k, a_{k+1}) \cdot \\
+&& 
+\cdot 
+\underbrace{\left( \sum_{a_1 \in Dom(A_1)} \prod_{k\in \{ 2, .., n-1\}}\psi_k'(a_k, a_{k+1})\psi_1(a_1, a_2) \psi_n(a_1, a_n)\right)}_{\psi_{22}(a_2, a_n)} \\
+&=&  \sum_{a_2 \in Dom(A_2)} \cdots \sum_{a_n \in Dom(A_n)} 
+\psi_{22}(a_2, a_n) \prod_{k\in\{2,...,n-1\} } \psi_k(a_k, a_{k+1}) &&\mathcal{O}(N^2) \\
+&=&  \sum_{a_3 \in Dom(A_3)} \cdots \sum_{a_n \in Dom(A_n)} 
+\psi_{32}(a_3, a_n) \prod_{k\in\{3,...,n-1\} } \psi_k(a_k, a_{k+1}) &&\mathcal{O}(N^2) \\
+\vdots \\
+&=&  \sum_{a_{n-1} \in Dom(A_{n-1})} \sum_{a_n \in Dom(A_n)} 
+\psi_{n-1 2}(a_n-1, a_n) \psi_{n-1}(a_n, a_{n-1})&&\mathcal{O}(N^2)\\
+\end{align*}
+In each step where we calculated aggregate, we see that the calculation takes ${O}(N^2)$ because of the joining on a variable in each step, thus complexity is as it is stated in the proposition 3.4. $\psi_k'(a_k, a_{k+1})$ is an indicator projection of $\psi_k$ it has value 1 when a tuple $(a_k, a_{k+1})$ exists in a relation. \\
+When we have categorical and continuous case the solution is similar, just in our calculations we would not sum over our free variable. 
+When we have two categorical variables we would join relations one by one leaving categorical variables (relations to whom they belong) the last with each join taking the most $O(N^2)$ and keeping aggregates (in this case count).  By doing this we can get final join in $O(n \cdot N^2 \cdot \log N)$ (which is what the slides claim).
 \item [1.4]
 By properties of functional dependency $A_2 \rightarrow A_1A_3 \Leftrightarrow A_2 \rightarrow A_1, A_2\rightarrow A_3$. This means if we one-hot encode each of categories from variables $A_1, A_2, A_3$ then $\vect{a}_{A_1} = \mat{R}_1 \vect{a}_{A_2}$ and $\vect{a}_{A_3} = \mat{R}_3 \vect{a}_{A_2}$ due to functional dependencies. Furthermore, if we concatenate particular matrices $\mat{R}= \begin{bmatrix}
 \mat{R}_1 \\
@@ -236,10 +257,7 @@ $$\theta_{13} = (\mat{I} + \mat{R}\transpose{\mat{R}})^{-1}\mat{R}\gamma_2$$
 Finally l2 regularizer is:
 $$\frac{\lambda}{2} \sum_{j \in \{0, 4, 5, ..., n-1 \} } ||\gamma_j||_2^2 + \langle (\mat{I} + \transpose{\mat{R}}\mat{R})^{-1}, \gamma_2 \rangle $$ (the full derivation in the "Learning Models over Relational Data
 using Sparse Tensors and Functional Dependencies").
-If we refined the complexity and included the fact that categorical variables behave as the vectors whose length is the same as a length of the particular domain, the complexity would become:
-$$\mathcal{O}(N^\frac{n}{2} + (n_d)^2 \cdot N^\frac{n}{2} + n_d \cdot  N^\frac{n}{2} + n_d^2 \cdot t) $$
-where $n_d= n + |Dom_{A_1}|+|Dom_{A_2}| + |Dom_{A_3}|$.
-We have reduced unnecessary operations from three categorical variables to one, which reduces $n_d$ to $n_w = n + |Dom_{A_2}|$
+We have reduced unnecessary operations from three categorical variables to one, which reduces $n_d$ to $n_w = n - 3 + |Dom_{A_2}|$
 $$\mathcal{O}(N^\frac{n}{2} + (n_w)^2 \cdot N^\frac{n}{2} + n_w \cdot  N^\frac{n}{2} + n_w^2 \cdot t) $$
 \item[2.]
 \item[2.1]
