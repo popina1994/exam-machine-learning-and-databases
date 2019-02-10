@@ -14,6 +14,7 @@
 \usetikzlibrary{calc}
 \usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
 \usepackage{thmtools, thm-restate}
+\usepackage{xcolor}
 
 \author{Djordje Zivanovic}
 \title{\textbf{Warsaw PhD Open Course: From Joins to Aggregates and
@@ -27,6 +28,7 @@ Optimization Problems - Exam solutions}}
 \newcommand{\transpose}[1]{#1 ^ \text{T}}
 \newcommand{\mat}[1]{\textbf{\text{{#1}}}}
 \newcommand{\vect}[1]{\mat{#1}}
+\newcommand{\view}[3]{\delta R_*(a', b') \cdot V_{S_{#1}T_{#2}W_{#3}}(b', a')}
 \newcommand{\gradient}[1]{\nabla_{\vect{#1}}}
 \newcommand{\der}[1]{\frac{\partial}{\partial #1}}
 \newcommand{\numberthis}{\addtocounter{equation}{1}\tag{\theequation}}
@@ -129,7 +131,7 @@ $$\mathcal{O}(N^\frac{n}{2} + n^2 \cdot N^\frac{n}{2} + n \cdot  N^\frac{n}{2} +
 If we refined the complexity and included the fact that categorical variables behave as the vectors whose length is the same as a length of the particular domain, the complexity would become:
 $$\mathcal{O}(N^\frac{n}{2} + (n_d)^2 \cdot N^\frac{n}{2} + n_d \cdot  N^\frac{n}{2} + n_d^2 \cdot t) $$
 where $n_d= n - 3 +  |Dom_{A_1}|+|Dom_{A_2}| + |Dom_{A_3}|$.
-Memory complexity after the join is
+\\Memory complexity after the join is
 $\mathcal{O}(N^\frac{n}{2})$. $\transpose{\mat{X}}\mat{X}$ cached takes $\mathcal{O}(n^2)$ and $\transpose{\mat{X}}\vect{y}$ takes $\mathcal{O}(n)$.
 When we add these complexities we get memory complexity at each iteration is:
 $\mathcal{O}(n^2)$. In addition, if we include in the result the fact that we have categorical values, memory complexity is $\mathcal{O}(n_d^2)$. 
@@ -295,7 +297,7 @@ In the equation \ref{eq:DotDef} we used the fact that $\langle \vect{a}, \vect{b
 \\
 Let $\pmb{\gamma}_2 = \transpose{\mat{R}}\pmb{\theta}_{13} + \pmb{\theta}_2$ and let $\pmb{\gamma}_j = \pmb{\theta}_j, j \in \{0, 4, ..., n-1\}$. $\pmb{\theta}_1, \pmb{\theta}_3$ won't appear in the square loss function because they don't appear in $\hat{y}$ as we see in the equation \ref{eq:approximation}. They still appear in $\ell_2$ regularizer. The square loss for each input (tuple in join) is:
 $$
-\left(\sum_{ i\in [n-1] \cup \{0\}} \langle \pmb{\gamma}_i, \vect{a}_i \rangle - \vect{a}_n\right)^2 \label{eq:approximation}
+\left(\sum_{ i\in [n-1]\setminus \{  1,3 \} \cup \{0\}} \langle \pmb{\gamma}_i, \vect{a}_i \rangle - \vect{a}_n\right)^2 \label{eq:approximation}
 $$
 In the $\ell_2$ regularizer we have:
 $$\ell_2 = \frac{\lambda}{2} \sum_{j \in \{0, 4, 5, ..., n \} } ||\pmb{\gamma}_j||_2^2 + ||\pmb{\theta}_{13} ||^2_2 +  ||\pmb{\gamma}_2 - \transpose{\mat{R}}\pmb{\theta}_{13}  ||_2^2$$
@@ -318,17 +320,17 @@ In the equation \ref{eq:simpleExp} we rewrote expressions for norms using rule $
 By further solving the equation \ref{eq:optimized} we get:
 $$\pmb{\theta}_{13} = (\mat{I}_{13} + \mat{R}\transpose{\mat{R}})^{-1}\mat{R}\pmb{\gamma}_2$$
 Finally $\ell_2$ regularizer is:
-$$\frac{\lambda}{2} \sum_{j \in \{0, 4, 5, ..., n-1 \} } ||\pmb{\gamma}_j||_2^2 + \langle (\mat{I}_2 + \transpose{\mat{R}}\mat{R})^{-1} \pmb{\gamma}_2 , \pmb{\gamma}_2 \rangle $$ 
+$$\frac{\lambda}{2} \left(\sum_{j \in \{0, 4, 5, ..., n-1 \} } ||\pmb{\gamma}_j||_2^2 + \langle (\mat{I}_2 + \transpose{\mat{R}}\mat{R})^{-1} \pmb{\gamma}_2 , \pmb{\gamma}_2 \rangle \right)$$ 
 The final derivation is the same as in \cite[page 21 C.1 appendix]{abo2018database} just in indices of parameters instead of city is $2$ and instead of country is $13$.
 \\
 The reparametrized loss function is:
 
 $$
-\frac{1}{2|D|}\sum_{\vect{a}\in D}\left(\sum_{ i\in [n-1] \cup \{0\}} \langle \pmb{\gamma}_i, \vect{a}_i \rangle - \vect{a}_n\right)^2 + \frac{\lambda}{2} \sum_{j \in \{0, 4, 5, ..., n-1 \} } ||\pmb{\gamma}_j||_2^2 + \langle (\mat{I}_2 + \transpose{\mat{R}}\mat{R})^{-1} \pmb{\gamma}_2 , \pmb{\gamma}_2 \rangle 
+\frac{1}{2|D|}\sum_{\vect{a}\in D}\left(\sum_{ i\in [n-1]\setminus \{  1,3 \} \cup \{0\}} \langle \pmb{\gamma}_i, \vect{a}_i \rangle - \vect{a}_n\right)^2 + \frac{\lambda}{2} \left(\sum_{j \in \{0, 4, 5, ..., n-1 \} } ||\pmb{\gamma}_j||_2^2 + \langle (\mat{I}_2 + \transpose{\mat{R}}\mat{R})^{-1} \pmb{\gamma}_2 , \pmb{\gamma}_2 \rangle \right) 
 $$
-We have reduced unnecessary operations from three categorical variables to one, which reduces $n_d$ to $n_w = n - 3 + |Dom_{A_2}|$ in the case of listing representation
+We have reduced of  categorical variables from three to one, which reduces $n_d$ to $n_w = n - 3 + |Dom_{A_2}|$ in the case of listing representation
 $$\mathcal{O}(N^\frac{n}{2} + (n_w)^2 \cdot N^\frac{n}{2} + n_w \cdot  N^\frac{n}{2} + n_w^2 \cdot t) $$
-In the case of FAQs we have removed the most time consuming FAQs, more precisely in the case of 2 categorical variables, we just need to evaluate FAQ for one variable. Thus, if sizes of domains are big in comparison to database size, complexity is reduced drastically.
+In the case of FAQs we have removed the most time consuming FAQs, more precisely in the case of 2 categorical variables, we just need to evaluate FAQ for one variable. Thus, if sizes of domains are big in comparison to database size, constant in complexity is reduced drastically.
 \item[2.]
 \item[2.1]
 
@@ -373,8 +375,74 @@ $$\mathcal{O}(n \cdot n^{2-2\gamma})=\mathcal{O}(n^{3-2\gamma})$$
 Summing complexities of steps (1) and 2) we get that an overall time complexity is $\mathcal{O}(n^{3-2\gamma})$, which is in contradiction to the claim from the conjecture \ref{conj:OUVM}. 
 
 \item[2.2]
-
-
+Let us call the first variables in relations $R, S, T, W$ variables $A, B, C, D$, respectively . Similarly, let us call the second variables in relations $R, S, T, W$: $B, C, D, A$, respectively. 
+Let us partition each relation in 4 partitions based on whether the variable is light or heavy in that relation. In case of a relation, we have 4 possible partitioning. If type of the second variable is not stated, it will include both heavy and light values. 
+We will use the same strategy used for triangle query with auxiliary views and updates of a count by iterating different type of partitions. 
+We will only give an update strategy for cycle count when relation $R(A, B)$ is updated, other relations are updated analogously. 
+\\
+In the table \ref{tab:Comp} we have complexities for different types of partitions of variables, along with update strategies for the cycle count. The column evaluation strategy will be explained on an example of the first row:
+Iterate through $c$ values in relation $S_L$ corresponding to updated $b'$, for each of those $c$ values iterate through corresponding $d$ in $T_L$, for each of those $d$ values iterate though a' (check if exists a tuple $(d, a')$ ) in $W_L$, for each of the iterated values add product of tuples from corresponding relations to the cycle count. In this case we would add for each iterated values a product: $\delta R_*(a', b') \cdot S_L(b', c) T_L(c, d) W_L(d, a')$. Since we have at most $|D|^\varepsilon$ $c$ values corresponding to $b'$ in $S_L$, and $|D|^\varepsilon$ $d$ values for each of $c$ values in $T_L$ we have at most $O|D|^{2\varepsilon}$ possible iterations. After we calculated sum of all products, we add this to the cycle count number. Also, we have to update relation $R$. 
+\\
+In some cases, where previous logic does not work because a number of iterations is at least linear, we have to keep an auxiliary view of cycle counts to which tuple $(a, b)$ belongs (excluding multiple of numbers of $(a, b)$). Updating auxiliary view in this case when $(a, b)$ is not needed. Although, we need to update cycle count which is updated by adding $\delta R_*(a', b') V(...)$. In addition, we might need to update other views, using the same logic as in the update to non-views. Calculation of initial views/cycle count is $\mathcal{O}(N^2)$ because we need to do a join over a database, which is at most $\mathcal{O}(N^2)$, and list  all possible combinations of $(a,b)$ which is at most $\mathcal{O}(N^2)$. 
+\renewcommand{\figurename}{Table}
+\begin{figure}	
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+Type of S & Type of T & Type of W & Time & Evaluation from left to right \\ 
+ \hline 
+%1
+L & L & L & $\mathcal{O}(|D|^{2\varepsilon})$ &
+$\delta R_*(a', b') \cdot \sum_c S_L(b', c) \sum_d T_L(c, d) W_L(d, a')$ \\ 
+\hline 
+%2
+L & L & H & $\mathcal{O}(|D|^{2\varepsilon})$ & $\delta R_*(a', b') \cdot \sum_c S_L(b', c) \sum_d T_L(c, d) W_H(d, a')$ \\ 
+\hline 
+%3
+L & H  & LL & $\mathcal{O}(|D|^{2\varepsilon})$ & $\delta R_*(a', b') \cdot \sum_c S_L(b', c) \sum_d W_{LL}(d, a') T_{H}(c, d) $ \\ 
+\hline 
+L & H & LH & $\mathcal{O}(1)$ & $\delta R_*(a', b') \cdot V_{S_LT_HW_{LH}}(b', a') $ \\ 
+\hline 
+%4
+L & H & HL & $\mathcal{O}(|D|^{2\varepsilon})$ &  $\delta R_*(a', b') \cdot \sum_c S_L(b', c) \sum_d W_{HL}(d, a') T_{H}(c, d) $ \\ 
+\hline 
+L & H & HH & $\mathcal{O}(1)$ & $\view{L}{H}{HH}$ \\ 
+\hline 
+%5
+H & LL & LL &  $\mathcal{O}(|D|^{2\varepsilon})$ &
+ $\delta R_*(a', b') \cdot \sum_d W_{LL}(d, a') \sum_c T_{LL}(c, d) S_H(b', c)   $\\ 
+\hline 
+H & LH & LL & $\mathcal{O}(1)$ & $\view{H}{LH}{LL}$  \\ 
+\hline 
+H & L & LH & $\mathcal{O}(1)$  & $\view{H}{L}{LH}$ \\ 
+\hline 
+%6
+H & LL & HL & $\mathcal{O}(|D|^{2\varepsilon})$ &  $\delta R_*(a', b') \cdot \sum_d W_{HL}(d, a') \sum_c T_{LL}(c, d) S_H(b', c)$
+\\ 
+\hline 
+H & LH & HL & $\mathcal{O}(1)$ & $\view{H}{LH}{HL}$ \\ 
+\hline 
+H & L & HH & $\mathcal{O}(1)$ & $\view{H}{L}{HH}$ \\ 
+%7
+\hline 
+H & HL & LL & $\mathcal{O}(|D|^{2\varepsilon})$ & $\delta R_*(a', b') \cdot \sum_d W_{LL}(d, a') \sum_c T_{HL}(c, d) S_H(b', c)$\\ 
+\hline 
+H & HH & LL & $\mathcal{O}(1)$ & $\view{H}{HH}{LL}$ \\ 
+\hline 
+H & H & LH, HH & $\mathcal{O}(1)$ & $\view{H}{H}{LL, HH}$ \\ 
+\hline 
+%8
+H & HL & HL & $\mathcal{O}(|D|^{2\varepsilon})$ & $\delta R_*(a', b') \cdot \sum_d W_{HL}(d, a') \sum_c T_{HL}(c, d) S_H(b', c)$\\ 
+\hline 
+H & HH & HL & $\mathcal{O}(1)$ & $\view{H}{HH}{HL}$ \\ 
+\hline 
+H & H & HH & $\mathcal{O}(1)$ & $\view{H}{H}{HH}$ \\ 
+\hline 
+\end{tabular} 
+\caption{Table of evaluation strategies for update of 4-cycle count}
+\end{center}
+\label{tab:Comp}
+\end{figure}
 
 \end{enumerate}
 
